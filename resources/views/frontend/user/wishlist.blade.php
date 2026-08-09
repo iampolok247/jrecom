@@ -10,6 +10,12 @@
                     <a href="{{ route('user.orders') }}" class="nav-link text-dark rounded-pill mb-1 fw-bold"><i class="bi bi-bag-check me-2"></i> My Orders</a>
                     <a href="{{ route('user.wishlist') }}" class="nav-link active rounded-pill mb-1 fw-bold"><i class="bi bi-heart me-2"></i> Wishlist</a>
                     <a href="{{ route('user.profile') }}" class="nav-link text-dark rounded-pill mb-1 fw-bold"><i class="bi bi-person-gear me-2"></i> Profile & Address</a>
+                    <form action="{{ route('logout') }}" method="POST" class="mt-2 pt-2 border-top">
+                        @csrf
+                        <button type="submit" class="nav-link text-danger w-100 text-start rounded-pill fw-bold border-0 bg-transparent">
+                            <i class="bi bi-box-arrow-right me-2"></i> Logout
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

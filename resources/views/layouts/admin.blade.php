@@ -292,6 +292,12 @@
                     <div class="fw-bold text-dark lh-1 mb-0" style="font-size: 0.9rem;">{{ auth()->user()->name }}</div>
                     <span class="small text-muted" style="font-size: 0.75rem;">Administrator</span>
                 </div>
+                <form action="{{ route('logout') }}" method="POST" class="ms-2">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" title="Logout">
+                        <i class="bi bi-power"></i>
+                    </button>
+                </form>
             </div>
         </div>
     </header>
