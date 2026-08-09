@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: jr-ecom
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        value: base64:o9WnGKr74hHyyYUtZb0Pf3qUEbkqkMueLOti9aoKeMg=
+      - key: DB_CONNECTION
+        value: sqlite
