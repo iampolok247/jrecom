@@ -10,10 +10,62 @@
 @ini_set('memory_limit', '512M');
 
 define('LARAVEL_START', microtime(true));
-$baseDir = dirname(__DIR__);
+
+$currentDir = __DIR__;
+$baseDir = (basename($currentDir) === 'public' || basename($currentDir) === 'public_html') ? dirname($currentDir) : $currentDir;
 $secretToken = 'ravelis_deploy_secret_987654321';
 
-// 1. Handle Secure HTTPS POST Deployment from GitHub Actions
+function copyRecursive($src, $dst) {
+    if (!file_exists($src)) return;
+    $dir = opendir($src);
+    @mkdir($dst, 0755, true);
+    while (false !== ($file = readdir($dir))) {
+        if (($file != '.') && ($file != '..')) {
+            if (is_dir($src . '/' . $file)) {
+                copyRecursive($src . '/' . $file, $dst . '/' . $file);
+            } else {
+                copy($src . '/' . $file, $dst . '/' . $file);
+            }
+        }
+    }
+    closedir($dir);
+}
+
+function processDeployment($baseDir, $currentDir) {
+    // 1. Sync public folder to public_html if running inside public_html
+    if (basename($currentDir) === 'public_html' && file_exists($baseDir . '/public')) {
+        copyRecursive($baseDir . '/public', $currentDir);
+        
+        // Fix index.php paths for public_html if needed
+        $indexPath = $currentDir . '/index.php';
+        if (file_exists($indexPath)) {
+            $indexContent = file_get_contents($indexPath);
+            $indexContent = str_replace("require __DIR__.'/../vendor/autoload.php';", "require '$baseDir/vendor/autoload.php';", $indexContent);
+            $indexContent = str_replace("require_once __DIR__.'/../bootstrap/app.php';", "require_once '$baseDir/bootstrap/app.php';", $indexContent);
+            file_put_contents($indexPath, $indexContent);
+        }
+    }
+
+    // 2. Run Artisan commands
+    $artisanLog = [];
+    if (file_exists($baseDir . '/vendor/autoload.php')) {
+        require_once $baseDir . '/vendor/autoload.php';
+        $app = require_once $baseDir . '/bootstrap/app.php';
+        $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+        $kernel->bootstrap();
+
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $artisanLog[] = \Illuminate\Support\Facades\Artisan::output();
+
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        $artisanLog[] = "Caches cleared successfully.";
+    }
+    return $artisanLog;
+}
+
+// Handle Secure HTTPS POST Deployment from GitHub Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     $providedToken = $_POST['token'] ?? $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? '';
@@ -33,24 +85,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $zip->close();
                 @unlink($targetZip);
 
-                // Run Artisan tasks
-                $artisanLog = [];
                 try {
-                    if (file_exists($baseDir . '/vendor/autoload.php')) {
-                        require_once $baseDir . '/vendor/autoload.php';
-                        $app = require_once $baseDir . '/bootstrap/app.php';
-                        $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-                        $kernel->bootstrap();
-
-                        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-                        $artisanLog[] = \Illuminate\Support\Facades\Artisan::output();
-
-                        \Illuminate\Support\Facades\Artisan::call('config:clear');
-                        \Illuminate\Support\Facades\Artisan::call('cache:clear');
-                        \Illuminate\Support\Facades\Artisan::call('view:clear');
-                        $artisanLog[] = "Caches cleared successfully.";
-                    }
-                    echo json_encode(['status' => 'success', 'message' => 'Deployed, unzipped, and migrated successfully!', 'log' => $artisanLog]);
+                    $log = processDeployment($baseDir, $currentDir);
+                    echo json_encode(['status' => 'success', 'message' => 'Deployed, unzipped, and migrated successfully!', 'log' => $log]);
                 } catch (\Throwable $e) {
                     echo json_encode(['status' => 'warning', 'message' => 'Unzipped, but Artisan warning: ' . $e->getMessage()]);
                 }
@@ -70,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// 2. Web UI View for Manual Browser Access
+// Web UI View for Manual Browser Access
 header('Content-Type: text/html; charset=utf-8');
 echo '<!DOCTYPE html>
 <html lang="en">
@@ -93,18 +130,17 @@ echo '<!DOCTYPE html>
 
 // Check for local zips if accessed directly via browser
 $possibleZips = [
-    __DIR__ . '/release.zip',
+    $currentDir . '/release.zip',
     $baseDir . '/release.zip',
 ];
 
 $extracted = false;
 foreach ($possibleZips as $zipFile) {
     if (file_exists($zipFile)) {
-        $targetDir = file_exists($baseDir . '/bootstrap') ? $baseDir : __DIR__;
         echo "<div class='alert alert-info'>Extracting " . basename($zipFile) . "...</div>";
         $zip = new ZipArchive();
         if ($zip->open($zipFile) === TRUE) {
-            $zip->extractTo($targetDir);
+            $zip->extractTo($baseDir);
             $zip->close();
             @unlink($zipFile);
             echo "<div class='alert alert-success'>Extracted " . basename($zipFile) . " successfully!</div>";
@@ -115,14 +151,7 @@ foreach ($possibleZips as $zipFile) {
 
 if ($extracted || file_exists($baseDir . '/vendor/autoload.php')) {
     try {
-        require_once $baseDir . '/vendor/autoload.php';
-        $app = require_once $baseDir . '/bootstrap/app.php';
-        $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-        $kernel->bootstrap();
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        \Illuminate\Support\Facades\Artisan::call('config:clear');
-        \Illuminate\Support\Facades\Artisan::call('cache:clear');
-        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        $log = processDeployment($baseDir, $currentDir);
         echo '<div class="alert alert-success mt-3">
             <h5 class="fw-bold mb-1">🎉 System Ready & Migrated!</h5>
             <div class="mt-3">
