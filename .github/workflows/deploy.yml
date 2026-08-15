@@ -33,23 +33,27 @@ jobs:
           npm ci
           npm run build
 
-      - name: Prepare Single Fast Release Bundle
+      - name: Package Release Zip Archive
         run: |
-          mkdir -p deploy-dist
-          zip -r deploy-dist/release.zip . -x ".git/*" ".github/*" "node_modules/*" ".env*" "deploy-dist/*"
-          cp public/setup.php deploy-dist/setup.php
+          zip -q -r release.zip . -x ".git/*" ".github/*" "node_modules/*" ".env*"
 
-      - name: Deploy Release Bundle via FTP (10-Second Upload)
+      - name: Upload Setup Script via FTP (Fallback)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        continue-on-error: true
         with:
           server: ${{ secrets.RAVELIS_FTP_HOST }}
           username: ${{ secrets.RAVELIS_FTP_USER }}
           password: ${{ secrets.RAVELIS_FTP_PASS }}
           port: 21
           protocol: ftp
-          local-dir: ./deploy-dist/
-          timeout: 180000
+          local-dir: ./public/
+          exclude: |
+            **/*
+            !setup.php
 
-      - name: Trigger Automatic Extraction & Setup
+      - name: Deploy Release Bundle via HTTPS POST (Fast & Reliable)
         run: |
-          curl -s -L "https://ravelis.online/setup.php" || true
+          curl -f -s -X POST \
+            -F "token=ravelis_deploy_secret_987654321" \
+            -F "package=@release.zip" \
+            "https://ravelis.online/setup.php"
