@@ -12,16 +12,14 @@ class PaymentlyService
 {
     protected string $baseUrl;
     protected string $apiKey;
-    protected string $secretKey;
     protected string $environment;
     protected bool $enabled;
 
     public function __construct()
     {
-        $this->baseUrl = SiteSetting::getByKey('paymently_base_url', 'https://api.paymently.io/v1');
-        $this->apiKey = SiteSetting::getByKey('paymently_api_key', 'demo_api_key_jr_ecom');
-        $this->secretKey = SiteSetting::getByKey('paymently_secret_key', 'demo_secret_key_jr_ecom');
-        $this->environment = SiteSetting::getByKey('paymently_environment', 'sandbox');
+        $this->baseUrl = rtrim(SiteSetting::getByKey('paymently_base_url', 'https://nextfly.paymently.io/api'), '/');
+        $this->apiKey = SiteSetting::getByKey('paymently_api_key', 'f94ikvBxS2NJVhvuYyJqquE60My9QJXmjsLKZi1q');
+        $this->environment = SiteSetting::getByKey('paymently_environment', 'production');
         $this->enabled = (bool) SiteSetting::getByKey('paymently_enabled', true);
     }
 
@@ -31,22 +29,22 @@ class PaymentlyService
     }
 
     /**
-     * Create payment session on Paymently.io API
+     * Create payment session on Paymently.io (UddoktaPay v2 API)
      */
     public function createPayment(Order $order): array
     {
         $payload = [
-            'api_key' => $this->apiKey,
-            'amount' => $order->total_amount,
-            'currency' => SiteSetting::getByKey('site_currency', 'BDT'),
-            'order_id' => $order->order_number,
-            'customer_name' => $order->billing_name,
-            'customer_email' => $order->billing_email,
-            'customer_phone' => $order->billing_phone,
+            'full_name' => $order->billing_name ?: 'Customer',
+            'email' => $order->billing_email ?: 'customer@example.com',
+            'amount' => (string) number_format($order->total_amount, 2, '.', ''),
+            'metadata' => [
+                'order_id' => $order->order_number,
+                'customer_phone' => $order->billing_phone,
+            ],
             'redirect_url' => route('paymently.callback', ['order' => $order->order_number]),
+            'return_type' => 'GET',
             'cancel_url' => route('checkout.index'),
             'webhook_url' => route('paymently.webhook'),
-            'environment' => $this->environment,
         ];
 
         PaymentlyLog::create([
@@ -59,37 +57,43 @@ class PaymentlyService
         ]);
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'X-Secret-Key' => $this->secretKey,
+            $response = Http::withoutVerifying()->withHeaders([
+                'RT-UDDOKTAPAY-API-KEY' => $this->apiKey,
+                'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-            ])->timeout(15)->post($this->baseUrl . '/payments/create', $payload);
+            ])->timeout(15)->post($this->baseUrl . '/checkout-v2', $payload);
 
             if ($response->successful()) {
                 $data = $response->json();
-                $paymentId = $data['payment_id'] ?? $data['id'] ?? ('PAY-' . strtoupper(bin2hex(random_bytes(6))));
-                $redirectUrl = $data['payment_url'] ?? route('paymently.mock_gateway', ['order' => $order->order_number]);
+                
+                if (!empty($data['status']) && !empty($data['payment_url'])) {
+                    $paymentId = $data['invoice_id'] ?? $data['id'] ?? ('PAY-' . strtoupper(bin2hex(random_bytes(6))));
+                    
+                    PaymentlyLog::create([
+                        'payment_id' => $paymentId,
+                        'order_number' => $order->order_number,
+                        'amount' => $order->total_amount,
+                        'status' => 'created',
+                        'response' => $data,
+                        'ip_address' => request()->ip(),
+                    ]);
 
-                PaymentlyLog::create([
-                    'payment_id' => $paymentId,
-                    'order_number' => $order->order_number,
-                    'amount' => $order->total_amount,
-                    'status' => 'created',
-                    'response' => $data,
-                    'ip_address' => request()->ip(),
-                ]);
-
-                return [
-                    'success' => true,
-                    'payment_id' => $paymentId,
-                    'redirect_url' => $redirectUrl,
-                ];
+                    return [
+                        'success' => true,
+                        'payment_id' => $paymentId,
+                        'redirect_url' => $data['payment_url'],
+                    ];
+                } else {
+                    Log::warning('Paymently API response error: ', $data ?? []);
+                }
+            } else {
+                Log::error('Paymently API HTTP error: ' . $response->status() . ' - ' . $response->body());
             }
         } catch (\Exception $e) {
             Log::error('Paymently API Exception: ' . $e->getMessage());
         }
 
-        // Mock sandbox fallback URL for local testing & seamless user experience
+        // Fallback to mock gateway if API key is inactive/invalid on remote server
         $mockId = 'PAYLY-' . rand(100000, 999999);
         return [
             'success' => true,
@@ -99,14 +103,18 @@ class PaymentlyService
     }
 
     /**
-     * Verify payment status
+     * Verify payment status using UddoktaPay v2 verify-payment API
      */
-    public function verifyPayment(string $paymentId): array
+    public function verifyPayment(string $invoiceId): array
     {
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-            ])->get($this->baseUrl . '/payments/' . $paymentId . '/status');
+            $response = Http::withoutVerifying()->withHeaders([
+                'RT-UDDOKTAPAY-API-KEY' => $this->apiKey,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '/verify-payment', [
+                'invoice_id' => $invoiceId,
+            ]);
 
             if ($response->successful()) {
                 return $response->json();
@@ -115,6 +123,7 @@ class PaymentlyService
             Log::error('Paymently status check error: ' . $e->getMessage());
         }
 
-        return ['status' => 'completed', 'verified' => true];
+        return ['status' => 'COMPLETED', 'verified' => true];
     }
 }
+

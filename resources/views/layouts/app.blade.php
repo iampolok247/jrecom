@@ -28,6 +28,7 @@
 
     <!-- Custom Dynamic Theme Styles -->
     <style>
+        [x-cloak] { display: none !important; }
         :root {
             --primary-color: {{ \App\Models\SiteSetting::getByKey('primary_color', '#4f46e5') }};
             --primary-hover: #4338ca;
@@ -231,7 +232,7 @@
                     <!-- Cart Drawer Trigger -->
                     <button class="btn btn-primary-gradient rounded-pill px-3 py-2 position-relative" @click="toggleMiniCart()">
                         <i class="bi bi-cart3 fs-5"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" x-text="cartCount">0</span>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" x-text="$store.cart.cartCount">0</span>
                     </button>
                 </div>
             </div>
@@ -295,32 +296,45 @@
         @yield('content')
     </main>
 
+    <!-- Mini Cart Backdrop Overlay -->
+    <div x-cloak
+         x-show="$store.cart.showMiniCart" 
+         @click="$store.cart.showMiniCart = false" 
+         class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" 
+         style="z-index: 1070;" 
+         x-transition.opacity></div>
+
     <!-- Mini Cart Slide-over Drawer -->
-    <div x-show="showMiniCart" class="position-fixed top-0 end-0 bottom-0 bg-white shadow-lg p-4" style="width: 380px; z-index: 1080; display: none;" x-transition>
+    <div x-cloak
+         x-show="$store.cart.showMiniCart" 
+         :class="$store.cart.showMiniCart ? 'd-flex' : 'd-none'"
+         class="position-fixed top-0 end-0 bottom-0 bg-white shadow-lg p-4 flex-column" 
+         style="width: 380px; z-index: 1080;" 
+         x-transition>
         <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
             <h5 class="fw-bold m-0"><i class="bi bi-bag-check text-primary me-2"></i> Your Shopping Cart</h5>
-            <button class="btn-close" @click="showMiniCart = false"></button>
+            <button class="btn-close" @click="$store.cart.showMiniCart = false"></button>
         </div>
         <div class="overflow-y-auto flex-grow-1" style="max-height: calc(100vh - 220px);">
-            <template x-for="(item, key) in cart" :key="key">
+            <template x-for="(item, key) in $store.cart.cart" :key="key">
                 <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
                     <img :src="item.image" width="60" height="60" class="rounded-3 me-3 object-fit-cover">
                     <div class="flex-grow-1">
                         <h6 class="mb-1 small fw-bold text-truncate" style="max-width: 180px;" x-text="item.name"></h6>
-                        <div class="small text-muted" x-text="item.quantity + ' x ৳' + item.price"></div>
+                        <div class="small text-muted" x-text="item.quantity + ' x ৳' + Number(item.price).toFixed(2)"></div>
                     </div>
-                    <button class="btn btn-sm btn-link text-danger p-0 ms-2" @click="removeItem(key)"><i class="bi bi-trash"></i></button>
+                    <button class="btn btn-sm btn-link text-danger p-0 ms-2" @click="$store.cart.remove(key)"><i class="bi bi-trash"></i></button>
                 </div>
             </template>
-            <div x-show="Object.keys(cart).length === 0" class="text-center py-5 text-muted">
+            <div x-show="Object.keys($store.cart.cart).length === 0" class="text-center py-5 text-muted">
                 <i class="bi bi-cart-x fs-1 opacity-50"></i>
                 <p class="mt-2">Your cart is empty.</p>
             </div>
         </div>
-        <div class="border-top pt-3 mt-auto" x-show="Object.keys(cart).length > 0">
+        <div class="border-top pt-3 mt-auto" x-show="Object.keys($store.cart.cart).length > 0">
             <div class="d-flex justify-content-between fw-bold mb-3 fs-5">
                 <span>Subtotal:</span>
-                <span class="text-primary" x-text="'৳' + totals.subtotal"></span>
+                <span class="text-primary" x-text="'৳' + Number($store.cart.totals.subtotal || 0).toFixed(2)"></span>
             </div>
             <a href="{{ route('cart.index') }}" class="btn btn-outline-dark w-100 rounded-pill mb-2 fw-semibold">View Full Cart</a>
             <a href="{{ route('checkout.index') }}" class="btn btn-primary-gradient w-100 rounded-pill">Proceed to Checkout</a>
@@ -380,70 +394,103 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
-        function appCart() {
-            return {
-                showMiniCart: false,
-                cart: {},
-                totals: { subtotal: 0 },
-                get cartCount() {
-                    return Object.values(this.cart).reduce((sum, item) => sum + item.quantity, 0);
-                },
-                init() {
-                    this.fetchCart();
-                },
-                fetchCart() {
-                    fetch('{{ route('cart.mini') }}', {
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(r => r.json())
-                    .then(data => {
-                        this.cart = data.cart || {};
-                        this.totals = data.totals || { subtotal: 0 };
-                    });
-                },
-                toggleMiniCart() {
-                    this.showMiniCart = !this.showMiniCart;
-                    if(this.showMiniCart) this.fetchCart();
-                },
-                addToCart(productId, quantity = 1, variant = {}) {
-                    fetch('{{ route('cart.add') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({ product_id: productId, quantity: quantity, variant: variant })
-                    })
-                    .then(r => r.json())
-                    .then(data => {
-                        if(data.success) {
+        function registerCartStore() {
+            if (window.Alpine && !window.Alpine.store('cart')) {
+                Alpine.store('cart', {
+                    showMiniCart: false,
+                    cart: {},
+                    totals: { subtotal: 0 },
+                    get cartCount() {
+                        return Object.values(this.cart || {}).reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
+                    },
+                    init() {
+                        this.fetchCart();
+                    },
+                    fetchCart() {
+                        fetch('{{ route('cart.mini') }}', {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            this.cart = data.cart || {};
+                            this.totals = data.totals || { subtotal: 0 };
+                        })
+                        .catch(err => console.error('Cart fetch error:', err));
+                    },
+                    toggleMiniCart() {
+                        this.showMiniCart = !this.showMiniCart;
+                        if (this.showMiniCart) this.fetchCart();
+                    },
+                    add(productId, quantity = 1, variant = {}) {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                        fetch('{{ route('cart.add') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify({ product_id: productId, quantity: quantity, variant: variant })
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.cart = data.cart;
+                                this.totals = data.totals;
+                                this.showMiniCart = true;
+                            }
+                        })
+                        .catch(err => console.error('Cart add error:', err));
+                    },
+                    remove(key) {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+                        fetch('{{ route('cart.remove') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify({ key: key })
+                        })
+                        .then(r => r.json())
+                        .then(data => {
                             this.cart = data.cart;
                             this.totals = data.totals;
-                            this.showMiniCart = true;
-                        }
-                    })
-                    .catch(err => console.error('Cart add error:', err));
-                },
-                removeItem(key) {
-                    fetch('{{ route('cart.remove') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({ key: key })
-                    }).then(r => r.json()).then(data => {
-                        this.cart = data.cart;
-                        this.totals = data.totals;
-                    });
-                }
+                        })
+                        .catch(err => console.error('Cart remove error:', err));
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('alpine:init', registerCartStore);
+        if (window.Alpine) {
+            registerCartStore();
+        }
+
+        // Global shortcut function for onclick and nested Alpine callers
+        window.addToCart = function(productId, quantity = 1, variant = {}) {
+            if (window.Alpine && window.Alpine.store('cart')) {
+                window.Alpine.store('cart').add(productId, quantity, variant);
+            }
+        };
+
+        function appCart() {
+            return {
+                get showMiniCart() { return window.Alpine && window.Alpine.store('cart') ? Alpine.store('cart').showMiniCart : false; },
+                set showMiniCart(val) { if (window.Alpine && window.Alpine.store('cart')) Alpine.store('cart').showMiniCart = val; },
+                get cart() { return window.Alpine && window.Alpine.store('cart') ? Alpine.store('cart').cart : {}; },
+                get totals() { return window.Alpine && window.Alpine.store('cart') ? Alpine.store('cart').totals : { subtotal: 0 }; },
+                get cartCount() { return window.Alpine && window.Alpine.store('cart') ? Alpine.store('cart').cartCount : 0; },
+                toggleMiniCart() { if (window.Alpine && window.Alpine.store('cart')) Alpine.store('cart').toggleMiniCart(); },
+                addToCart(productId, quantity = 1, variant = {}) { if (window.Alpine && window.Alpine.store('cart')) Alpine.store('cart').add(productId, quantity, variant); },
+                removeItem(key) { if (window.Alpine && window.Alpine.store('cart')) Alpine.store('cart').remove(key); }
             }
         }
     </script>

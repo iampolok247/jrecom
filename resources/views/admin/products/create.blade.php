@@ -14,6 +14,17 @@
         </a>
     </div>
 
+    @if ($errors->any())
+        <div class="alert alert-danger rounded-4 border-0 mb-4 shadow-sm">
+            <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i> Please correct the following errors:</h6>
+            <ul class="mb-0 small ps-3">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="row g-4 mb-4">

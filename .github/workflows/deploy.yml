@@ -1,0 +1,74 @@
+name: Deploy JR-Ecom Multi-Tenant Applications
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-servers:
+    name: Deploy to Hosting Server
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - name: "Bongomart"
+            host: ${{ secrets.BONGOMART_FTP_HOST }}
+            user: ${{ secrets.BONGOMART_FTP_USER }}
+            pass: ${{ secrets.BONGOMART_FTP_PASS }}
+            port: 21
+          - name: "BikroBD24"
+            host: ${{ secrets.BIKROBD24_FTP_HOST }}
+            user: ${{ secrets.BIKROBD24_FTP_USER }}
+            pass: ${{ secrets.BIKROBD24_FTP_PASS }}
+            port: 21
+          - name: "Deshioo"
+            host: ${{ secrets.DESHIOO_FTP_HOST }}
+            user: ${{ secrets.DESHIOO_FTP_USER }}
+            pass: ${{ secrets.DESHIOO_FTP_PASS }}
+            port: 21
+          - name: "Ravelis"
+            host: ${{ secrets.RAVELIS_FTP_HOST }}
+            user: ${{ secrets.RAVELIS_FTP_USER }}
+            pass: ${{ secrets.RAVELIS_FTP_PASS }}
+            port: 21
+
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install PHP Dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & Build Frontend Assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy to ${{ matrix.target.name }} via FTP
+        if: ${{ matrix.target.host != '' }}
+        uses: SamKirsch/ftp-deploy-action@v4.3.5
+        with:
+          server: ${{ matrix.target.host }}
+          username: ${{ matrix.target.user }}
+          password: ${{ matrix.target.pass }}
+          port: ${{ matrix.target.port }}
+          protocol: ftp
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.env
+            **/storage/logs/**
+            **/storage/framework/cache/**
+            **/storage/framework/sessions/**
+            **/storage/framework/views/**
+            **/node_modules/**

@@ -50,42 +50,89 @@
 
                 <!-- Payment Method Selection -->
                 <div class="card-custom p-4">
-                    <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-shield-lock text-primary me-2"></i> Select Payment Method</h5>
+                    <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-shield-lock-fill text-primary me-2"></i> Select Payment Method</h5>
 
                     <div class="vstack gap-3">
                         @foreach($paymentMethods as $pm)
-                            <div class="border rounded-4 p-3 cursor-pointer"
-                                 :class="selectedGateway === '{{ $pm->code }}' ? 'border-primary bg-primary-subtle' : 'bg-white'"
-                                 @click="selectedGateway = '{{ $pm->code }}'">
-                                <div class="form-check d-flex align-items-center justify-content-between m-0">
-                                    <div>
-                                        <input class="form-check-input me-2" type="radio" name="payment_method_code" value="{{ $pm->code }}" id="pm_{{ $pm->id }}" x-model="selectedGateway">
-                                        <label class="form-check-label fw-bold text-dark" for="pm_{{ $pm->id }}">
-                                            {{ $pm->name }}
-                                        </label>
-                                    </div>
-                                    @if($pm->logo)
-                                        <img src="{{ $pm->logo }}" height="32" class="object-fit-contain">
-                                    @endif
-                                </div>
-                                <p class="small text-muted mt-2 mb-0 ms-4">{{ $pm->instructions }}</p>
+                            @if($pm->code === 'paymently')
+                                <!-- Paymently.io Premium Gateway Option -->
+                                <div class="border rounded-4 p-4 cursor-pointer position-relative transition-all shadow-sm"
+                                     :class="selectedGateway === 'paymently' ? 'border-primary bg-primary bg-opacity-10 shadow' : 'bg-white hover-shadow-sm'"
+                                     style="border-width: 2px !important; transition: all 0.3s ease;"
+                                     @click="selectedGateway = 'paymently'">
+                                    
+                                    <div class="form-check d-flex align-items-start justify-content-between m-0">
+                                        <div class="d-flex align-items-start">
+                                            <input class="form-check-input mt-1 me-3 fs-5" type="radio" name="payment_method_code" value="paymently" id="pm_{{ $pm->id }}" x-model="selectedGateway">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                    <label class="form-check-label fw-bold text-dark fs-6 cursor-pointer mb-0" for="pm_{{ $pm->id }}">
+                                                        Paymently.io Instant Gateway (Cards, Banking, MFS)
+                                                    </label>
+                                                    <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 small fw-bold" style="font-size: 0.7rem;">Recommended</span>
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small fw-bold" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-lightning-charge-fill me-1"></i>Instant Automated
+                                                    </span>
+                                                </div>
 
-                                <!-- Mobile banking Trx ID input box -->
-                                <template x-if="['bkash', 'nagad', 'rocket'].includes(selectedGateway) && selectedGateway === '{{ $pm->code }}'">
-                                    <div class="mt-3 p-3 bg-white border rounded-3 ms-4">
-                                        <div class="row g-2">
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold">Your Account Number</label>
-                                                <input type="text" name="sender_account" class="form-control form-control-sm rounded-pill" placeholder="017...">
+                                                <p class="small text-muted mt-2 mb-3">
+                                                    Pay securely & instantly using Visa, Mastercard, AMEX, bKash, Nagad, Rocket or Internet Banking with instant order confirmation.
+                                                </p>
+
+                                                <!-- Channel Logos & Badges -->
+                                                <div class="d-flex flex-wrap align-items-center gap-2 pt-1">
+                                                    <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
+                                                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #e2136e;"></span> bKash
+                                                    </span>
+                                                    <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
+                                                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #f7921e;"></span> Nagad
+                                                    </span>
+                                                    <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
+                                                        <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #8c3494;"></span> Rocket
+                                                    </span>
+                                                    <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
+                                                        <i class="bi bi-credit-card-2-front-fill text-primary"></i> Cards & AMEX
+                                                    </span>
+                                                    <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
+                                                        <i class="bi bi-bank2 text-success"></i> NetBanking
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold">Transaction TrxID</label>
-                                                <input type="text" name="transaction_id" class="form-control form-control-sm rounded-pill" placeholder="TRX9876543">
+                                        </div>
+
+                                        <div class="d-none d-sm-block text-end">
+                                            <div class="p-2.5 rounded-3 bg-white border shadow-2xs">
+                                                <i class="bi bi-wallet2 text-primary fs-3"></i>
                                             </div>
                                         </div>
                                     </div>
-                                </template>
-                            </div>
+                                </div>
+                            @elseif($pm->code === 'cod')
+                                <!-- Cash On Delivery Option -->
+                                <div class="border rounded-4 p-4 cursor-pointer position-relative transition-all"
+                                     :class="selectedGateway === 'cod' ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 'bg-white hover-shadow-sm'"
+                                     style="border-width: 2px !important; transition: all 0.3s ease;"
+                                     @click="selectedGateway = 'cod'">
+                                    <div class="form-check d-flex align-items-start justify-content-between m-0">
+                                        <div class="d-flex align-items-start">
+                                            <input class="form-check-input mt-1 me-3 fs-5" type="radio" name="payment_method_code" value="cod" id="pm_{{ $pm->id }}" x-model="selectedGateway">
+                                            <div>
+                                                <label class="form-check-label fw-bold text-dark fs-6 cursor-pointer d-block mb-1" for="pm_{{ $pm->id }}">
+                                                    Cash On Delivery (COD)
+                                                </label>
+                                                <p class="small text-muted mb-0">
+                                                    Pay cash upon receiving your items at your doorstep.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="d-none d-sm-block text-end">
+                                            <div class="p-2.5 rounded-3 bg-white border shadow-2xs">
+                                                <i class="bi bi-cash-stack text-success fs-3"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         @endforeach
                     </div>
                 </div>
