@@ -50,3 +50,4 @@ jobs:
             **/storage/framework/sessions/**
             **/storage/framework/views/**
             **/node_modules/**
+            **/vendor/**
