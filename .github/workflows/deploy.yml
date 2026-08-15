@@ -82,7 +82,7 @@ jobs:
 
       - name: Deploy to ${{ matrix.target.name }} via FTP
         if: ${{ steps.creds.outputs.host != '' }}
-        uses: SamKirsch/ftp-deploy-action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ steps.creds.outputs.host }}
           username: ${{ steps.creds.outputs.user }}
