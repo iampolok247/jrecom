@@ -34,7 +34,6 @@ jobs:
           npm run build
 
       - name: Deploy to Ravelis via FTP
-        if: ${{ secrets.RAVELIS_FTP_HOST != '' }}
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.RAVELIS_FTP_HOST }}
