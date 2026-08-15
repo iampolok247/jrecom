@@ -23,9 +23,6 @@ jobs:
       - name: Install PHP Dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-      - name: Package Vendor Archive for Fast Upload
-        run: zip -r vendor.zip vendor/
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -36,7 +33,13 @@ jobs:
           npm ci
           npm run build
 
-      - name: Deploy to Ravelis via FTP
+      - name: Prepare Single Fast Release Bundle
+        run: |
+          mkdir -p deploy-dist
+          zip -r deploy-dist/release.zip . -x ".git/*" ".github/*" "node_modules/*" ".env*" "deploy-dist/*"
+          cp public/setup.php deploy-dist/setup.php
+
+      - name: Deploy Release Bundle via FTP (10-Second Upload)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.RAVELIS_FTP_HOST }}
@@ -44,15 +47,9 @@ jobs:
           password: ${{ secrets.RAVELIS_FTP_PASS }}
           port: 21
           protocol: ftp
-          timeout: 190000
-          log-level: verbose
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.env
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
-            **/node_modules/**
-            **/vendor/**
+          local-dir: ./deploy-dist/
+          timeout: 180000
+
+      - name: Trigger Automatic Extraction & Setup
+        run: |
+          curl -s -L "https://ravelis.online/setup.php" || true
