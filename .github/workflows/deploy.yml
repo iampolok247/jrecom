@@ -13,28 +13,19 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - name: "Bongomart"
-            host: ${{ secrets.BONGOMART_FTP_HOST }}
-            user: ${{ secrets.BONGOMART_FTP_USER }}
-            pass: ${{ secrets.BONGOMART_FTP_PASS }}
-            port: 21
-          - name: "BikroBD24"
-            host: ${{ secrets.BIKROBD24_FTP_HOST }}
-            user: ${{ secrets.BIKROBD24_FTP_USER }}
-            pass: ${{ secrets.BIKROBD24_FTP_PASS }}
-            port: 21
-          - name: "Deshioo"
-            host: ${{ secrets.DESHIOO_FTP_HOST }}
-            user: ${{ secrets.DESHIOO_FTP_USER }}
-            pass: ${{ secrets.DESHIOO_FTP_PASS }}
-            port: 21
-          - name: "Ravelis"
-            host: ${{ secrets.RAVELIS_FTP_HOST }}
-            user: ${{ secrets.RAVELIS_FTP_USER }}
-            pass: ${{ secrets.RAVELIS_FTP_PASS }}
-            port: 21
+          - id: "BONGOMART"
+            name: "Bongomart"
+          - id: "BIKROBD24"
+            name: "BikroBD24"
+          - id: "DESHIOO"
+            name: "Deshioo"
+          - id: "RAVELIS"
+            name: "Ravelis"
 
     steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -54,14 +45,49 @@ jobs:
           npm ci
           npm run build
 
+      - name: Set Server Credentials
+        id: creds
+        env:
+          BONGOMART_HOST: ${{ secrets.BONGOMART_FTP_HOST }}
+          BONGOMART_USER: ${{ secrets.BONGOMART_FTP_USER }}
+          BONGOMART_PASS: ${{ secrets.BONGOMART_FTP_PASS }}
+          BIKROBD24_HOST: ${{ secrets.BIKROBD24_FTP_HOST }}
+          BIKROBD24_USER: ${{ secrets.BIKROBD24_FTP_USER }}
+          BIKROBD24_PASS: ${{ secrets.BIKROBD24_FTP_PASS }}
+          DESHIOO_HOST: ${{ secrets.DESHIOO_FTP_HOST }}
+          DESHIOO_USER: ${{ secrets.DESHIOO_FTP_USER }}
+          DESHIOO_PASS: ${{ secrets.DESHIOO_FTP_PASS }}
+          RAVELIS_HOST: ${{ secrets.RAVELIS_FTP_HOST }}
+          RAVELIS_USER: ${{ secrets.RAVELIS_FTP_USER }}
+          RAVELIS_PASS: ${{ secrets.RAVELIS_FTP_PASS }}
+        run: |
+          TARGET_ID="${{ matrix.target.id }}"
+          if [ "$TARGET_ID" = "BONGOMART" ]; then
+            echo "host=$BONGOMART_HOST" >> $GITHUB_OUTPUT
+            echo "user=$BONGOMART_USER" >> $GITHUB_OUTPUT
+            echo "pass=$BONGOMART_PASS" >> $GITHUB_OUTPUT
+          elif [ "$TARGET_ID" = "BIKROBD24" ]; then
+            echo "host=$BIKROBD24_HOST" >> $GITHUB_OUTPUT
+            echo "user=$BIKROBD24_USER" >> $GITHUB_OUTPUT
+            echo "pass=$BIKROBD24_PASS" >> $GITHUB_OUTPUT
+          elif [ "$TARGET_ID" = "DESHIOO" ]; then
+            echo "host=$DESHIOO_HOST" >> $GITHUB_OUTPUT
+            echo "user=$DESHIOO_USER" >> $GITHUB_OUTPUT
+            echo "pass=$DESHIOO_PASS" >> $GITHUB_OUTPUT
+          elif [ "$TARGET_ID" = "RAVELIS" ]; then
+            echo "host=$RAVELIS_HOST" >> $GITHUB_OUTPUT
+            echo "user=$RAVELIS_USER" >> $GITHUB_OUTPUT
+            echo "pass=$RAVELIS_PASS" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to ${{ matrix.target.name }} via FTP
-        if: ${{ matrix.target.host != '' }}
+        if: ${{ steps.creds.outputs.host != '' }}
         uses: SamKirsch/ftp-deploy-action@v4.3.5
         with:
-          server: ${{ matrix.target.host }}
-          username: ${{ matrix.target.user }}
-          password: ${{ matrix.target.pass }}
-          port: ${{ matrix.target.port }}
+          server: ${{ steps.creds.outputs.host }}
+          username: ${{ steps.creds.outputs.user }}
+          password: ${{ steps.creds.outputs.pass }}
+          port: 21
           protocol: ftp
           exclude: |
             **/.git*
