@@ -1,4 +1,4 @@
-name: Deploy JR-Ecom Multi-Tenant Applications
+name: Deploy JR-Ecom Application
 
 on:
   push:
@@ -6,21 +6,9 @@ on:
       - main
 
 jobs:
-  deploy-servers:
-    name: Deploy to Hosting Server
+  deploy-ravelis:
+    name: Deploy to Ravelis Server
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target:
-          - id: "BONGOMART"
-            name: "Bongomart"
-          - id: "BIKROBD24"
-            name: "BikroBD24"
-          - id: "DESHIOO"
-            name: "Deshioo"
-          - id: "RAVELIS"
-            name: "Ravelis"
 
     steps:
       - name: Checkout Source Code
@@ -29,7 +17,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.3'
           coverage: none
 
       - name: Install PHP Dependencies
@@ -45,48 +33,13 @@ jobs:
           npm ci
           npm run build
 
-      - name: Set Server Credentials
-        id: creds
-        env:
-          BONGOMART_HOST: ${{ secrets.BONGOMART_FTP_HOST }}
-          BONGOMART_USER: ${{ secrets.BONGOMART_FTP_USER }}
-          BONGOMART_PASS: ${{ secrets.BONGOMART_FTP_PASS }}
-          BIKROBD24_HOST: ${{ secrets.BIKROBD24_FTP_HOST }}
-          BIKROBD24_USER: ${{ secrets.BIKROBD24_FTP_USER }}
-          BIKROBD24_PASS: ${{ secrets.BIKROBD24_FTP_PASS }}
-          DESHIOO_HOST: ${{ secrets.DESHIOO_FTP_HOST }}
-          DESHIOO_USER: ${{ secrets.DESHIOO_FTP_USER }}
-          DESHIOO_PASS: ${{ secrets.DESHIOO_FTP_PASS }}
-          RAVELIS_HOST: ${{ secrets.RAVELIS_FTP_HOST }}
-          RAVELIS_USER: ${{ secrets.RAVELIS_FTP_USER }}
-          RAVELIS_PASS: ${{ secrets.RAVELIS_FTP_PASS }}
-        run: |
-          TARGET_ID="${{ matrix.target.id }}"
-          if [ "$TARGET_ID" = "BONGOMART" ]; then
-            echo "host=$BONGOMART_HOST" >> $GITHUB_OUTPUT
-            echo "user=$BONGOMART_USER" >> $GITHUB_OUTPUT
-            echo "pass=$BONGOMART_PASS" >> $GITHUB_OUTPUT
-          elif [ "$TARGET_ID" = "BIKROBD24" ]; then
-            echo "host=$BIKROBD24_HOST" >> $GITHUB_OUTPUT
-            echo "user=$BIKROBD24_USER" >> $GITHUB_OUTPUT
-            echo "pass=$BIKROBD24_PASS" >> $GITHUB_OUTPUT
-          elif [ "$TARGET_ID" = "DESHIOO" ]; then
-            echo "host=$DESHIOO_HOST" >> $GITHUB_OUTPUT
-            echo "user=$DESHIOO_USER" >> $GITHUB_OUTPUT
-            echo "pass=$DESHIOO_PASS" >> $GITHUB_OUTPUT
-          elif [ "$TARGET_ID" = "RAVELIS" ]; then
-            echo "host=$RAVELIS_HOST" >> $GITHUB_OUTPUT
-            echo "user=$RAVELIS_USER" >> $GITHUB_OUTPUT
-            echo "pass=$RAVELIS_PASS" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Deploy to ${{ matrix.target.name }} via FTP
-        if: ${{ steps.creds.outputs.host != '' }}
+      - name: Deploy to Ravelis via FTP
+        if: ${{ secrets.RAVELIS_FTP_HOST != '' }}
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ steps.creds.outputs.host }}
-          username: ${{ steps.creds.outputs.user }}
-          password: ${{ steps.creds.outputs.pass }}
+          server: ${{ secrets.RAVELIS_FTP_HOST }}
+          username: ${{ secrets.RAVELIS_FTP_USER }}
+          password: ${{ secrets.RAVELIS_FTP_PASS }}
           port: 21
           protocol: ftp
           exclude: |
