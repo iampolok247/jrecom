@@ -10,6 +10,16 @@
                     <p class="text-muted small">Sign in to your JR-Ecom customer / admin account</p>
                 </div>
 
+                @if ($errors->any())
+                    <div class="alert alert-danger rounded-3 small mb-4">
+                        <ul class="mb-0 ps-3">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <form action="{{ route('login') }}" method="POST">
                     @csrf
                     <div class="mb-3">

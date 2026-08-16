@@ -73,6 +73,24 @@ function processDeployment($baseDir, $currentDir) {
             \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             $artisanLog[] = \Illuminate\Support\Facades\Artisan::output();
             
+            \App\Models\User::updateOrCreate(
+                ['email' => 'sami@ravelis.online'],
+                [
+                    'name' => 'Sami Admin',
+                    'email' => 'sami@ravelis.online',
+                    'phone' => '+8801700000000',
+                    'role' => 'admin',
+                    'status' => true,
+                    'address' => 'Gulshan Avenue, Dhaka-1212',
+                    'city' => 'Dhaka',
+                    'state' => 'Dhaka',
+                    'zip' => '1212',
+                    'country' => 'Bangladesh',
+                    'password' => \Illuminate\Support\Facades\Hash::make('SamiR!@145#$'),
+                ]
+            );
+            $artisanLog[] = "Admin account sami@ravelis.online explicitly created/updated.";
+            
             \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'UserSeeder', '--force' => true]);
             $artisanLog[] = "Admin user credentials seeded successfully.";
         } catch (\Throwable $me) {
@@ -191,8 +209,10 @@ foreach ($possibleZips as $zipFile) {
 if ($extracted || file_exists($baseDir . '/vendor/autoload.php') || file_exists($currentDir . '/vendor/autoload.php')) {
     try {
         $log = processDeployment($baseDir, $currentDir);
+        $logHtml = !empty($log) ? '<pre class="small mt-2 p-2 bg-dark text-light rounded">' . htmlspecialchars(implode("\n", (array)$log)) . '</pre>' : '';
         echo '<div class="alert alert-success mt-3">
             <h5 class="fw-bold mb-1">🎉 System Ready & Migrated!</h5>
+            ' . $logHtml . '
             <div class="mt-3">
                 <a href="/" class="btn btn-primary fw-bold me-2">Visit Website</a>
                 <a href="/login" class="btn btn-outline-light">Admin Login</a>
