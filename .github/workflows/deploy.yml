@@ -37,19 +37,6 @@ jobs:
         run: |
           zip -q -r release.zip . -x ".git/*" ".github/*" "node_modules/*" ".env*" "tests/*" "storage/framework/cache/*" "storage/framework/sessions/*" "storage/framework/views/*" "storage/logs/*"
 
-      - name: Upload Setup Script via FTP (Fallback)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        continue-on-error: true
-        with:
-          server: ${{ secrets.RAVELIS_FTP_HOST }}
-          username: ${{ secrets.RAVELIS_FTP_USER }}
-          password: ${{ secrets.RAVELIS_FTP_PASS }}
-          port: 21
-          protocol: ftp
-          local-dir: ./public/
-          exclude: |
-            **/*
-            !setup.php
 
       - name: Deploy Release Bundle via HTTPS POST (Fast & Reliable)
         run: |
