@@ -53,13 +53,18 @@ class SettingController extends Controller
             }
         }
 
+        $uploadsDir = public_path('uploads/settings');
+        if (!file_exists($uploadsDir)) {
+            @mkdir($uploadsDir, 0755, true);
+        }
+
         // Process Site Logo (File Upload takes priority over text URL)
         if ($request->hasFile('site_logo_file')) {
             $file = $request->file('site_logo_file');
             $fileName = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('settings', $fileName, 'public');
-            SiteSetting::setKey('site_logo', asset('storage/' . $path));
-        } elseif ($request->filled('site_logo')) {
+            $file->move($uploadsDir, $fileName);
+            SiteSetting::setKey('site_logo', asset('uploads/settings/' . $fileName));
+        } elseif ($request->has('site_logo')) {
             SiteSetting::setKey('site_logo', $request->input('site_logo'));
         }
 
@@ -67,9 +72,9 @@ class SettingController extends Controller
         if ($request->hasFile('site_dark_logo_file')) {
             $file = $request->file('site_dark_logo_file');
             $fileName = 'dark_logo_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('settings', $fileName, 'public');
-            SiteSetting::setKey('site_dark_logo', asset('storage/' . $path));
-        } elseif ($request->filled('site_dark_logo')) {
+            $file->move($uploadsDir, $fileName);
+            SiteSetting::setKey('site_dark_logo', asset('uploads/settings/' . $fileName));
+        } elseif ($request->has('site_dark_logo')) {
             SiteSetting::setKey('site_dark_logo', $request->input('site_dark_logo'));
         }
 
@@ -77,9 +82,9 @@ class SettingController extends Controller
         if ($request->hasFile('site_favicon_file')) {
             $file = $request->file('site_favicon_file');
             $fileName = 'favicon_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('settings', $fileName, 'public');
-            SiteSetting::setKey('site_favicon', asset('storage/' . $path));
-        } elseif ($request->filled('site_favicon')) {
+            $file->move($uploadsDir, $fileName);
+            SiteSetting::setKey('site_favicon', asset('uploads/settings/' . $fileName));
+        } elseif ($request->has('site_favicon')) {
             SiteSetting::setKey('site_favicon', $request->input('site_favicon'));
         }
 
