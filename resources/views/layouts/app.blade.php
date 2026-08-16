@@ -44,6 +44,9 @@
             background-color: var(--bg-body);
             color: #1e293b;
             overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         .btn-primary-gradient {
@@ -155,7 +158,7 @@
                             $siteName = \App\Models\SiteSetting::getByKey('site_name', 'JR-Ecom');
                         @endphp
                         @if(!empty($siteLogo))
-                            <img src="{{ $siteLogo }}" alt="{{ $siteName }}" height="44" class="object-fit-contain">
+                            <img src="{{ $siteLogo }}" alt="{{ $siteName }}" class="object-fit-contain" style="max-height: 56px; width: auto;">
                         @else
                             <div>
                                 <span class="fs-3 fw-extrabold tracking-tight" style="color: var(--primary-color);">{{ $siteName }}</span>
@@ -292,7 +295,7 @@
     @endif
 
     <!-- Main Content Body -->
-    <main>
+    <main class="flex-grow-1">
         @yield('content')
     </main>
 
@@ -323,7 +326,7 @@
                         <h6 class="mb-1 small fw-bold text-truncate" style="max-width: 180px;" x-text="item.name"></h6>
                         <div class="small text-muted" x-text="item.quantity + ' x ৳' + Number(item.price).toFixed(2)"></div>
                     </div>
-                    <button class="btn btn-sm btn-link text-danger p-0 ms-2" @click="$store.cart.remove(key)"><i class="bi bi-trash"></i></button>
+                    <button class="btn-sm btn-link text-danger p-0 ms-2 btn" @click="$store.cart.remove(key)"><i class="bi bi-trash"></i></button>
                 </div>
             </template>
             <div x-show="Object.keys($store.cart.cart).length === 0" class="text-center py-5 text-muted">
@@ -342,11 +345,21 @@
     </div>
 
     <!-- Modern Footer -->
-    <footer class="bg-dark text-white pt-5 mt-5">
+    <footer class="bg-dark text-white pt-5 mt-auto">
         <div class="container pb-4 border-bottom border-secondary">
             <div class="row g-4">
                 <div class="col-lg-4">
-                    <h5 class="fw-bold mb-3 text-primary">{{ \App\Models\SiteSetting::getByKey('site_name', 'JR-Ecom') }}</h5>
+                    @php
+                        $footerLogo = \App\Models\SiteSetting::getByKey('site_dark_logo') ?: \App\Models\SiteSetting::getByKey('site_logo');
+                        $siteName = \App\Models\SiteSetting::getByKey('site_name', 'JR-Ecom');
+                    @endphp
+                    @if(!empty($footerLogo))
+                        <a href="{{ route('home') }}" class="d-inline-block mb-3">
+                            <img src="{{ $footerLogo }}" alt="{{ $siteName }}" class="object-fit-contain" style="max-height: 55px; width: auto;">
+                        </a>
+                    @else
+                        <h5 class="fw-bold mb-3 text-primary">{{ $siteName }}</h5>
+                    @endif
                     <p class="text-secondary small">{{ \App\Models\SiteSetting::getByKey('footer_description', 'JR-Ecom is a premier multi-category e-commerce platform offering top brands, fast shipping, and 24/7 support.') }}</p>
                     <div class="d-flex gap-3 fs-5 mt-3">
                         <a href="{{ \App\Models\SiteSetting::getByKey('facebook_url', '#') }}" class="text-secondary hover-text-white"><i class="bi bi-facebook"></i></a>

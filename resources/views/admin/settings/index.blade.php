@@ -12,29 +12,43 @@
         <!-- Storefront Branding & Logo File Uploads -->
         <h5 class="fw-bold text-primary mb-3"><i class="bi bi-image me-1"></i> Storefront Logo & Favicon Uploads</h5>
         <div class="row g-4 mb-4 p-4 border rounded-4 bg-light">
-            <!-- Main Logo Upload -->
-            <div class="col-md-6 border-end">
-                <label class="form-label small fw-bold">Main Brand Logo (File Upload)</label>
+            <!-- Main Navbar Logo Upload -->
+            <div class="col-md-4 border-end">
+                <label class="form-label small fw-bold">Header Navbar Logo</label>
                 <input type="file" name="site_logo_file" class="form-control rounded-pill" accept="image/*">
                 <span class="small text-muted d-block mt-1">Or paste URL below:</span>
                 <input type="text" name="site_logo" value="{{ $settings['site_logo'] ?? '' }}" class="form-control form-control-sm rounded-pill mt-1" placeholder="https://...">
                 @if(!empty($settings['site_logo']))
                     <div class="mt-2">
-                        <span class="small text-muted d-block">Current Logo Preview:</span>
+                        <span class="small text-muted d-block">Navbar Logo Preview:</span>
                         <img src="{{ $settings['site_logo'] }}" height="40" class="object-fit-contain bg-white p-1 border rounded mt-1">
                     </div>
                 @endif
             </div>
 
+            <!-- Footer / Dark Logo Upload -->
+            <div class="col-md-4 border-end">
+                <label class="form-label small fw-bold">Footer Brand Logo</label>
+                <input type="file" name="site_dark_logo_file" class="form-control rounded-pill" accept="image/*">
+                <span class="small text-muted d-block mt-1">Or paste URL below:</span>
+                <input type="text" name="site_dark_logo" value="{{ $settings['site_dark_logo'] ?? '' }}" class="form-control form-control-sm rounded-pill mt-1" placeholder="https://...">
+                @if(!empty($settings['site_dark_logo']))
+                    <div class="mt-2">
+                        <span class="small text-muted d-block">Footer Logo Preview:</span>
+                        <img src="{{ $settings['site_dark_logo'] }}" height="40" class="object-fit-contain bg-dark p-1 border rounded mt-1">
+                    </div>
+                @endif
+            </div>
+
             <!-- Favicon Upload -->
-            <div class="col-md-6">
-                <label class="form-label small fw-bold">Favicon Icon (File Upload)</label>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Favicon Icon</label>
                 <input type="file" name="site_favicon_file" class="form-control rounded-pill" accept="image/*">
                 <span class="small text-muted d-block mt-1">Or paste URL below:</span>
                 <input type="text" name="site_favicon" value="{{ $settings['site_favicon'] ?? '' }}" class="form-control form-control-sm rounded-pill mt-1" placeholder="https://...">
                 @if(!empty($settings['site_favicon']))
                     <div class="mt-2">
-                        <span class="small text-muted d-block">Current Favicon Preview:</span>
+                        <span class="small text-muted d-block">Favicon Preview:</span>
                         <img src="{{ $settings['site_favicon'] }}" height="32" width="32" class="object-fit-contain bg-white p-1 border rounded mt-1">
                     </div>
                 @endif
