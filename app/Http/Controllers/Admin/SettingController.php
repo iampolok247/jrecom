@@ -58,32 +58,40 @@ class SettingController extends Controller
             @mkdir($uploadsDir, 0755, true);
         }
 
+        $cpanelPublicHtmlDir = dirname(public_path()) . '/public_html/uploads/settings';
+
+        $saveUploadedFile = function ($file, $prefix) use ($uploadsDir, $cpanelPublicHtmlDir) {
+            $fileName = $prefix . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $file->move($uploadsDir, $fileName);
+
+            if (file_exists(dirname($cpanelPublicHtmlDir)) && is_dir(dirname($cpanelPublicHtmlDir)) && realpath(dirname($cpanelPublicHtmlDir)) !== realpath($uploadsDir)) {
+                @mkdir($cpanelPublicHtmlDir, 0755, true);
+                @copy($uploadsDir . '/' . $fileName, $cpanelPublicHtmlDir . '/' . $fileName);
+            }
+
+            return asset('uploads/settings/' . $fileName);
+        };
+
         // Process Site Logo (File Upload takes priority over text URL)
         if ($request->hasFile('site_logo_file')) {
-            $file = $request->file('site_logo_file');
-            $fileName = 'logo_' . time() . '.' . $file->getClientOriginalExtension();
-            $file->move($uploadsDir, $fileName);
-            SiteSetting::setKey('site_logo', asset('uploads/settings/' . $fileName));
+            $logoUrl = $saveUploadedFile($request->file('site_logo_file'), 'logo');
+            SiteSetting::setKey('site_logo', $logoUrl);
         } elseif ($request->has('site_logo')) {
             SiteSetting::setKey('site_logo', $request->input('site_logo'));
         }
 
         // Process Dark Logo
         if ($request->hasFile('site_dark_logo_file')) {
-            $file = $request->file('site_dark_logo_file');
-            $fileName = 'dark_logo_' . time() . '.' . $file->getClientOriginalExtension();
-            $file->move($uploadsDir, $fileName);
-            SiteSetting::setKey('site_dark_logo', asset('uploads/settings/' . $fileName));
+            $darkLogoUrl = $saveUploadedFile($request->file('site_dark_logo_file'), 'dark_logo');
+            SiteSetting::setKey('site_dark_logo', $darkLogoUrl);
         } elseif ($request->has('site_dark_logo')) {
             SiteSetting::setKey('site_dark_logo', $request->input('site_dark_logo'));
         }
 
         // Process Favicon (File Upload takes priority over text URL)
         if ($request->hasFile('site_favicon_file')) {
-            $file = $request->file('site_favicon_file');
-            $fileName = 'favicon_' . time() . '.' . $file->getClientOriginalExtension();
-            $file->move($uploadsDir, $fileName);
-            SiteSetting::setKey('site_favicon', asset('uploads/settings/' . $fileName));
+            $faviconUrl = $saveUploadedFile($request->file('site_favicon_file'), 'favicon');
+            SiteSetting::setKey('site_favicon', $faviconUrl);
         } elseif ($request->has('site_favicon')) {
             SiteSetting::setKey('site_favicon', $request->input('site_favicon'));
         }
