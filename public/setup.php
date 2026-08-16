@@ -93,16 +93,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 exit;
             } else {
+                http_response_code(400);
                 echo json_encode(['status' => 'error', 'message' => 'Failed to open uploaded ZIP file']);
                 exit;
             }
         } else {
-            echo json_encode(['status' => 'error', 'message' => 'Failed to move uploaded file']);
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to move uploaded file to target directory']);
             exit;
         }
     } else {
+        http_response_code(400);
         $errCode = $_FILES['package']['error'] ?? 'No package file attached';
-        echo json_encode(['status' => 'error', 'message' => 'Upload failed. Error code: ' . $errCode]);
+        $uploadErrors = [
+            1 => 'Uploaded file exceeds upload_max_filesize directive in php.ini',
+            2 => 'Uploaded file exceeds MAX_FILE_SIZE directive in HTML form',
+            3 => 'The file was only partially uploaded',
+            4 => 'No file was uploaded',
+            6 => 'Missing a temporary folder',
+            7 => 'Failed to write file to disk',
+            8 => 'A PHP extension stopped the file upload'
+        ];
+        $errMsg = $uploadErrors[$errCode] ?? ('Error code: ' . $errCode);
+        echo json_encode(['status' => 'error', 'message' => 'Upload failed. ' . $errMsg]);
         exit;
     }
 }
