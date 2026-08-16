@@ -12,6 +12,7 @@
 define('LARAVEL_START', microtime(true));
 
 $currentDir = __DIR__;
+$baseDir = (basename($currentDir) === 'public' || basename($currentDir) === 'public_html') ? dirname($currentDir) : $currentDir;
 $secretToken = 'ravelis_deploy_secret_987654321';
 
 function copyRecursive($src, $dst) {
@@ -30,29 +31,37 @@ function copyRecursive($src, $dst) {
     closedir($dir);
 }
 
-function processDeployment($targetDir) {
-    // 1. If a public folder was unzipped inside targetDir, sync its contents directly to targetDir
-    $publicSubDir = $targetDir . '/public';
-    if (file_exists($publicSubDir) && is_dir($publicSubDir) && realpath($publicSubDir) !== realpath($targetDir)) {
-        copyRecursive($publicSubDir, $targetDir);
-    }
-
-    // 2. Ensure index.php in targetDir has correct autoload & bootstrap paths
-    $indexPath = $targetDir . '/index.php';
-    if (file_exists($indexPath)) {
-        $indexContent = file_get_contents($indexPath);
-        $vendorRelPath = file_exists($targetDir . '/vendor/autoload.php') ? "__DIR__ . '/vendor/autoload.php'" : "__DIR__ . '/../vendor/autoload.php'";
-        $appRelPath = file_exists($targetDir . '/bootstrap/app.php') ? "__DIR__ . '/bootstrap/app.php'" : "__DIR__ . '/../bootstrap/app.php'";
-        
-        $indexContent = preg_replace("/require\s+__DIR__\s*\.\s*'\/[^\']*\bvendor\/autoload\.php';/", "require $vendorRelPath;", $indexContent);
-        $indexContent = preg_replace("/require_once\s+__DIR__\s*\.\s*'\/[^\']*\bbootstrap\/app\.php';/", "require_once $appRelPath;", $indexContent);
-        file_put_contents($indexPath, $indexContent);
-    }
-
-    // 3. Run Artisan migrations & clear caches
+function processDeployment($baseDir, $currentDir) {
     $artisanLog = [];
-    $autoloadPath = file_exists($targetDir . '/vendor/autoload.php') ? $targetDir . '/vendor/autoload.php' : dirname($targetDir) . '/vendor/autoload.php';
-    $appBootstrapPath = file_exists($targetDir . '/bootstrap/app.php') ? $targetDir . '/bootstrap/app.php' : dirname($targetDir) . '/bootstrap/app.php';
+
+    // 1. Locate public assets source folder (either baseDir/public or currentDir/public)
+    $publicSrc = null;
+    if (file_exists($baseDir . '/public') && is_dir($baseDir . '/public') && realpath($baseDir . '/public') !== realpath($currentDir)) {
+        $publicSrc = $baseDir . '/public';
+    } elseif (file_exists($currentDir . '/public') && is_dir($currentDir . '/public') && realpath($currentDir . '/public') !== realpath($currentDir)) {
+        $publicSrc = $currentDir . '/public';
+    }
+
+    // 2. Sync public folder contents to current web root (public_html)
+    if ($publicSrc) {
+        copyRecursive($publicSrc, $currentDir);
+        $artisanLog[] = "Public assets synced to web root.";
+    }
+
+    // 3. Ensure index.php in web root points to valid vendor/autoload and bootstrap/app
+    $indexPath = $currentDir . '/index.php';
+    if (file_exists($indexPath)) {
+        $vendorPath = file_exists($baseDir . '/vendor/autoload.php') ? "$baseDir/vendor/autoload.php" : (file_exists($currentDir . '/vendor/autoload.php') ? "$currentDir/vendor/autoload.php" : dirname($currentDir) . '/vendor/autoload.php');
+        $appPath = file_exists($baseDir . '/bootstrap/app.php') ? "$baseDir/bootstrap/app.php" : (file_exists($currentDir . '/bootstrap/app.php') ? "$currentDir/bootstrap/app.php" : dirname($currentDir) . '/bootstrap/app.php');
+        
+        $indexContent = "<?php\n\nuse Illuminate\\Http\\Request;\n\ndefine('LARAVEL_START', microtime(true));\n\nif (file_exists(\$maintenance = '$baseDir/storage/framework/maintenance.php')) {\n    require \$maintenance;\n}\n\nrequire '$vendorPath';\n\n\$app = require_once '$appPath';\n\n\$app->handleRequest(Request::capture());\n";
+        file_put_contents($indexPath, $indexContent);
+        $artisanLog[] = "Web root index.php paths updated successfully.";
+    }
+
+    // 4. Bootstrap Laravel & Run Artisan commands
+    $autoloadPath = file_exists($baseDir . '/vendor/autoload.php') ? $baseDir . '/vendor/autoload.php' : $currentDir . '/vendor/autoload.php';
+    $appBootstrapPath = file_exists($baseDir . '/bootstrap/app.php') ? $baseDir . '/bootstrap/app.php' : $currentDir . '/bootstrap/app.php';
 
     if (file_exists($autoloadPath) && file_exists($appBootstrapPath)) {
         require_once $autoloadPath;
@@ -64,7 +73,7 @@ function processDeployment($targetDir) {
             \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             $artisanLog[] = \Illuminate\Support\Facades\Artisan::output();
         } catch (\Throwable $me) {
-            $artisanLog[] = "Migration note: " . $me->getMessage();
+            $artisanLog[] = "Migration status: " . $me->getMessage();
         }
 
         try {
@@ -73,7 +82,7 @@ function processDeployment($targetDir) {
             \Illuminate\Support\Facades\Artisan::call('view:clear');
             $artisanLog[] = "Caches cleared successfully.";
         } catch (\Throwable $ce) {
-            $artisanLog[] = "Cache clear note: " . $ce->getMessage();
+            $artisanLog[] = "Cache status: " . $ce->getMessage();
         }
     }
     return $artisanLog;
@@ -91,16 +100,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_FILES['package']) && $_FILES['package']['error'] === UPLOAD_ERR_OK) {
-        $targetZip = $currentDir . '/release.zip';
+        $targetZip = $baseDir . '/release.zip';
         if (move_uploaded_file($_FILES['package']['tmp_name'], $targetZip)) {
             $zip = new ZipArchive();
             if ($zip->open($targetZip) === TRUE) {
-                $zip->extractTo($currentDir);
+                $zip->extractTo($baseDir);
                 $zip->close();
                 @unlink($targetZip);
 
                 try {
-                    $log = processDeployment($currentDir);
+                    $log = processDeployment($baseDir, $currentDir);
                     echo json_encode(['status' => 'success', 'message' => 'Deployed, unzipped, synced public assets, and migrated successfully!', 'log' => $log]);
                 } catch (\Throwable $e) {
                     echo json_encode(['status' => 'warning', 'message' => 'Unzipped, but notice: ' . $e->getMessage()]);
@@ -156,23 +165,29 @@ echo '<!DOCTYPE html>
 ';
 
 // Check for local zips if accessed directly via browser
-$targetZipPath = $currentDir . '/release.zip';
+$possibleZips = [
+    $currentDir . '/release.zip',
+    $baseDir . '/release.zip',
+];
+
 $extracted = false;
-if (file_exists($targetZipPath)) {
-    echo "<div class='alert alert-info'>Extracting " . basename($targetZipPath) . "...</div>";
-    $zip = new ZipArchive();
-    if ($zip->open($targetZipPath) === TRUE) {
-        $zip->extractTo($currentDir);
-        $zip->close();
-        @unlink($targetZipPath);
-        echo "<div class='alert alert-success'>Extracted " . basename($targetZipPath) . " successfully!</div>";
-        $extracted = true;
+foreach ($possibleZips as $zipFile) {
+    if (file_exists($zipFile)) {
+        echo "<div class='alert alert-info'>Extracting " . basename($zipFile) . "...</div>";
+        $zip = new ZipArchive();
+        if ($zip->open($zipFile) === TRUE) {
+            $zip->extractTo($baseDir);
+            $zip->close();
+            @unlink($zipFile);
+            echo "<div class='alert alert-success'>Extracted " . basename($zipFile) . " successfully!</div>";
+            $extracted = true;
+        }
     }
 }
 
-if ($extracted || file_exists($currentDir . '/vendor/autoload.php') || file_exists(dirname($currentDir) . '/vendor/autoload.php')) {
+if ($extracted || file_exists($baseDir . '/vendor/autoload.php') || file_exists($currentDir . '/vendor/autoload.php')) {
     try {
-        $log = processDeployment($currentDir);
+        $log = processDeployment($baseDir, $currentDir);
         echo '<div class="alert alert-success mt-3">
             <h5 class="fw-bold mb-1">🎉 System Ready & Migrated!</h5>
             <div class="mt-3">
