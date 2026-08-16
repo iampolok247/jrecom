@@ -32,16 +32,19 @@ function copyRecursive($src, $dst) {
 }
 
 function processDeployment($baseDir, $currentDir) {
-    // 1. Sync public folder to public_html if running inside public_html
-    if (basename($currentDir) === 'public_html' && file_exists($baseDir . '/public')) {
-        copyRecursive($baseDir . '/public', $currentDir);
+    // 1. Sync public folder files to web root if public directory exists
+    $publicDir = file_exists($baseDir . '/public') ? $baseDir . '/public' : (file_exists($currentDir . '/public') ? $currentDir . '/public' : null);
+    if ($publicDir && realpath($publicDir) !== realpath($currentDir)) {
+        copyRecursive($publicDir, $currentDir);
         
-        // Fix index.php paths for public_html if needed
+        // Fix index.php paths for web root
         $indexPath = $currentDir . '/index.php';
         if (file_exists($indexPath)) {
             $indexContent = file_get_contents($indexPath);
-            $indexContent = str_replace("require __DIR__.'/../vendor/autoload.php';", "require '$baseDir/vendor/autoload.php';", $indexContent);
-            $indexContent = str_replace("require_once __DIR__.'/../bootstrap/app.php';", "require_once '$baseDir/bootstrap/app.php';", $indexContent);
+            $vendorPath = file_exists($baseDir . '/vendor/autoload.php') ? "$baseDir/vendor/autoload.php" : __DIR__ . '/vendor/autoload.php';
+            $appPath = file_exists($baseDir . '/bootstrap/app.php') ? "$baseDir/bootstrap/app.php" : __DIR__ . '/bootstrap/app.php';
+            $indexContent = str_replace("require __DIR__.'/../vendor/autoload.php';", "require '$vendorPath';", $indexContent);
+            $indexContent = str_replace("require_once __DIR__.'/../bootstrap/app.php';", "require_once '$appPath';", $indexContent);
             file_put_contents($indexPath, $indexContent);
         }
     }
