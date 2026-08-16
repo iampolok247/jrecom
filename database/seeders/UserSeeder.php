@@ -11,10 +11,10 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@jrecom.com'],
+            ['role' => 'admin'],
             [
-                'name' => 'Super Admin',
-                'email' => 'admin@jrecom.com',
+                'name' => 'Sami Admin',
+                'email' => 'sami@ravelis.online',
                 'phone' => '+8801700000000',
                 'role' => 'admin',
                 'status' => true,
@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
                 'state' => 'Dhaka',
                 'zip' => '1212',
                 'country' => 'Bangladesh',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('SamiR!@145#$'),
             ]
         );
 

@@ -31,12 +31,6 @@
                     <button type="submit" class="btn btn-primary-gradient w-100 rounded-pill py-2">Sign In</button>
                 </form>
 
-                <div class="mt-4 p-3 bg-light rounded-4 small">
-                    <div class="fw-bold mb-1"><i class="bi bi-key-fill text-primary me-1"></i> Demo Quick Login Credentials:</div>
-                    <div class="text-muted mb-1">Super Admin: <code>admin@jrecom.com</code> / <code>password123</code></div>
-                    <div class="text-muted">Customer: <code>customer@jrecom.com</code> / <code>password123</code></div>
-                </div>
-
                 <div class="text-center mt-4">
                     <span class="small text-muted">Don't have an account? <a href="{{ route('register') }}" class="fw-bold text-primary">Register Here</a></span>
                 </div>

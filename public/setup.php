@@ -72,6 +72,9 @@ function processDeployment($baseDir, $currentDir) {
         try {
             \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             $artisanLog[] = \Illuminate\Support\Facades\Artisan::output();
+            
+            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'UserSeeder', '--force' => true]);
+            $artisanLog[] = "Admin user credentials seeded successfully.";
         } catch (\Throwable $me) {
             $artisanLog[] = "Migration status: " . $me->getMessage();
         }
