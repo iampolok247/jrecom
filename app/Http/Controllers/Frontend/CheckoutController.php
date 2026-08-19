@@ -31,6 +31,14 @@ class CheckoutController extends Controller
         }
 
         $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('order', 'asc')->get();
+        if ($paymentMethods->isEmpty()) {
+            try {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PaymentMethodSeeder', '--force' => true]);
+                $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('order', 'asc')->get();
+            } catch (\Throwable $e) {
+                // Ignore if seeder fails
+            }
+        }
         $totals = $this->cartService->getTotals(60.00); // default shipping
         $user = auth()->user();
 

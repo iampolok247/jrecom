@@ -53,7 +53,7 @@
                     <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="bi bi-shield-lock-fill text-primary me-2"></i> Select Payment Method</h5>
 
                     <div class="vstack gap-3">
-                        @foreach($paymentMethods as $pm)
+                        @forelse($paymentMethods as $pm)
                             @if($pm->code === 'paymently')
                                 <!-- Paymently.io Premium Gateway Option -->
                                 <div class="border rounded-4 p-4 cursor-pointer position-relative transition-all shadow-sm"
@@ -79,7 +79,6 @@
                                                     Pay securely & instantly using Visa, Mastercard, AMEX, bKash, Nagad, Rocket or Internet Banking with instant order confirmation.
                                                 </p>
 
-                                                <!-- Channel Logos & Badges -->
                                                 <div class="d-flex flex-wrap align-items-center gap-2 pt-1">
                                                     <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
                                                         <span class="rounded-circle d-inline-block" style="width: 10px; height: 10px; background-color: #e2136e;"></span> bKash
@@ -93,9 +92,6 @@
                                                     <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
                                                         <i class="bi bi-credit-card-2-front-fill text-primary"></i> Cards & AMEX
                                                     </span>
-                                                    <span class="badge bg-white text-dark border shadow-2xs rounded-pill px-3 py-1.5 small fw-semibold d-inline-flex align-items-center gap-1.5">
-                                                        <i class="bi bi-bank2 text-success"></i> NetBanking
-                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -107,21 +103,53 @@
                                         </div>
                                     </div>
                                 </div>
-                            @elseif($pm->code === 'cod')
+                            @elseif(in_array($pm->code, ['bkash', 'nagad', 'rocket']))
+                                <!-- Direct Mobile Banking Option -->
+                                <div class="border rounded-4 p-4 cursor-pointer position-relative transition-all"
+                                     :class="selectedGateway === '{{ $pm->code }}' ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 'bg-white hover-shadow-sm'"
+                                     style="border-width: 2px !important; transition: all 0.3s ease;"
+                                     @click="selectedGateway = '{{ $pm->code }}'">
+                                    <div class="form-check d-flex align-items-start justify-content-between m-0">
+                                        <div class="d-flex align-items-start w-100">
+                                            <input class="form-check-input mt-1 me-3 fs-5" type="radio" name="payment_method_code" value="{{ $pm->code }}" id="pm_{{ $pm->id }}" x-model="selectedGateway">
+                                            <div class="w-100">
+                                                <label class="form-check-label fw-bold text-dark fs-6 cursor-pointer d-block mb-1" for="pm_{{ $pm->id }}">
+                                                    {{ $pm->name }}
+                                                </label>
+                                                <p class="small text-muted mb-2">{{ $pm->instructions ?? 'Send money and enter your transaction ID.' }}</p>
+                                                @if(!empty($pm->account_number) || !empty($pm->merchant_number))
+                                                    <div class="p-2 bg-white rounded border small mb-2">
+                                                        @if(!empty($pm->merchant_number)) <div><strong>Merchant Number:</strong> {{ $pm->merchant_number }}</div> @endif
+                                                        @if(!empty($pm->account_number)) <div><strong>Personal Account:</strong> {{ $pm->account_number }}</div> @endif
+                                                    </div>
+                                                @endif
+                                                <div x-show="selectedGateway === '{{ $pm->code }}'" class="row g-2 mt-2">
+                                                    <div class="col-md-6">
+                                                        <input type="text" name="sender_account" class="form-control form-control-sm rounded-pill" placeholder="Your {{ strtoupper($pm->code) }} Number">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <input type="text" name="transaction_id" class="form-control form-control-sm rounded-pill" placeholder="Transaction ID (TrxID)">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
                                 <!-- Cash On Delivery Option -->
                                 <div class="border rounded-4 p-4 cursor-pointer position-relative transition-all"
-                                     :class="selectedGateway === 'cod' ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 'bg-white hover-shadow-sm'"
+                                     :class="selectedGateway === '{{ $pm->code }}' ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 'bg-white hover-shadow-sm'"
                                      style="border-width: 2px !important; transition: all 0.3s ease;"
-                                     @click="selectedGateway = 'cod'">
+                                     @click="selectedGateway = '{{ $pm->code }}'">
                                     <div class="form-check d-flex align-items-start justify-content-between m-0">
                                         <div class="d-flex align-items-start">
-                                            <input class="form-check-input mt-1 me-3 fs-5" type="radio" name="payment_method_code" value="cod" id="pm_{{ $pm->id }}" x-model="selectedGateway">
+                                            <input class="form-check-input mt-1 me-3 fs-5" type="radio" name="payment_method_code" value="{{ $pm->code }}" id="pm_{{ $pm->id }}" x-model="selectedGateway">
                                             <div>
                                                 <label class="form-check-label fw-bold text-dark fs-6 cursor-pointer d-block mb-1" for="pm_{{ $pm->id }}">
-                                                    Cash On Delivery (COD)
+                                                    {{ $pm->name }}
                                                 </label>
                                                 <p class="small text-muted mb-0">
-                                                    Pay cash upon receiving your items at your doorstep.
+                                                    {{ $pm->instructions ?? 'Pay cash upon receiving your items at your doorstep.' }}
                                                 </p>
                                             </div>
                                         </div>
@@ -133,7 +161,29 @@
                                     </div>
                                 </div>
                             @endif
-                        @endforeach
+                        @empty
+                            <!-- Fallback default when payment_methods table is unseeded -->
+                            <div class="border rounded-4 p-4 cursor-pointer bg-primary bg-opacity-10 border-primary shadow-sm" @click="selectedGateway = 'cod'">
+                                <div class="form-check d-flex align-items-start justify-content-between m-0">
+                                    <div class="d-flex align-items-start">
+                                        <input class="form-check-input mt-1 me-3 fs-5" type="radio" name="payment_method_code" value="cod" id="pm_fallback_cod" checked x-model="selectedGateway">
+                                        <div>
+                                            <label class="form-check-label fw-bold text-dark fs-6 cursor-pointer d-block mb-1" for="pm_fallback_cod">
+                                                Cash On Delivery (COD)
+                                            </label>
+                                            <p class="small text-muted mb-0">
+                                                Pay cash upon receiving your items at your doorstep.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="d-none d-sm-block text-end">
+                                        <div class="p-2.5 rounded-3 bg-white border shadow-2xs">
+                                            <i class="bi bi-cash-stack text-success fs-3"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>

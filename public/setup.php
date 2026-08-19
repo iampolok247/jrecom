@@ -94,7 +94,8 @@ function processDeployment($baseDir, $currentDir) {
             \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'UserSeeder', '--force' => true]);
             \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'HomepageSeeder', '--force' => true]);
             \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'SiteSettingSeeder', '--force' => true]);
-            $artisanLog[] = "Admin user credentials, homepage sections, and site settings seeded successfully.";
+            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'PaymentMethodSeeder', '--force' => true]);
+            $artisanLog[] = "Admin user credentials, homepage sections, site settings, and payment methods seeded successfully.";
         } catch (\Throwable $me) {
             $artisanLog[] = "Migration status: " . $me->getMessage();
         }
