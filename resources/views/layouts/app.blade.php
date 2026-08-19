@@ -360,7 +360,7 @@
                     @else
                         <h5 class="fw-bold mb-3 text-primary">{{ $siteName }}</h5>
                     @endif
-                    <p class="text-secondary small">{{ \App\Models\SiteSetting::getByKey('footer_description', 'JR-Ecom is a premier multi-category e-commerce platform offering top brands, fast shipping, and 24/7 support.') }}</p>
+                    <p class="text-secondary small">{{ \App\Models\SiteSetting::getByKey('footer_description', 'Ravelis is a premium lifestyle e-commerce brand dedicated to bringing elegance, quality and timeless style to your everyday life. Discover carefully selected products designed to add sophistication and value to every moment.') }}</p>
                     <div class="d-flex gap-3 fs-5 mt-3">
                         <a href="{{ \App\Models\SiteSetting::getByKey('facebook_url', '#') }}" class="text-secondary hover-text-white"><i class="bi bi-facebook"></i></a>
                         <a href="{{ \App\Models\SiteSetting::getByKey('instagram_url', '#') }}" class="text-secondary hover-text-white"><i class="bi bi-instagram"></i></a>
