@@ -163,6 +163,27 @@
         </section>
     @endif
 
+    <!-- New Arrivals Section -->
+    @if(isset($sections['new_arrivals']) && $sections['new_arrivals']->is_enabled)
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold m-0 text-dark">New Arrivals & Fresh Stocks</h3>
+                    <p class="text-muted small m-0">Check out the latest additions to our store catalog</p>
+                </div>
+                <a href="{{ route('shop.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All Products</a>
+            </div>
+
+            <div class="row g-4">
+                @foreach($newArrivals as $product)
+                    <div class="col-6 col-md-4 col-lg-3">
+                        @include('frontend.partials.product-card', ['product' => $product])
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <!-- Popular Brands Showcase -->
     @if(isset($sections['popular_brands']) && $sections['popular_brands']->is_enabled)
         <section class="mb-5 py-4 bg-white rounded-4 border px-4">

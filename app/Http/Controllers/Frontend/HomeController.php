@@ -22,12 +22,23 @@ class HomeController extends Controller
         $topCategories = Category::where('level', 0)->where('status', true)->orderBy('order', 'asc')->take(8)->get();
         $featuredCategories = Category::where('is_featured', true)->where('status', true)->take(6)->get();
 
+        $latestProducts = Product::with(['category', 'brand', 'images'])->where('is_active', true)->latest()->take(8)->get();
         $featuredProducts = Product::with(['category', 'brand', 'images'])->where('is_active', true)->where('is_featured', true)->take(8)->get();
         $flashSaleProducts = Product::with(['category', 'brand', 'images'])->where('is_active', true)->where('is_flash_sale', true)->take(6)->get();
         $trendingProducts = Product::with(['category', 'brand', 'images'])->where('is_active', true)->where('is_trending', true)->take(8)->get();
         $todayDeals = Product::with(['category', 'brand', 'images'])->where('is_active', true)->where('is_today_deal', true)->take(6)->get();
         $newArrivals = Product::with(['category', 'brand', 'images'])->where('is_active', true)->where('is_new_arrival', true)->take(8)->get();
         $bestSellers = Product::with(['category', 'brand', 'images'])->where('is_active', true)->where('is_best_seller', true)->take(8)->get();
+
+        if ($featuredProducts->isEmpty()) {
+            $featuredProducts = $latestProducts;
+        }
+        if ($newArrivals->isEmpty()) {
+            $newArrivals = $latestProducts;
+        }
+        if ($trendingProducts->isEmpty()) {
+            $trendingProducts = $latestProducts;
+        }
 
         $brands = Brand::where('status', true)->where('is_featured', true)->orderBy('order', 'asc')->get();
         $customerReviews = Review::with(['user', 'product'])->where('status', true)->where('rating', '>=', 4)->take(6)->get();
@@ -39,6 +50,7 @@ class HomeController extends Controller
             'offerBanners',
             'topCategories',
             'featuredCategories',
+            'latestProducts',
             'featuredProducts',
             'flashSaleProducts',
             'trendingProducts',

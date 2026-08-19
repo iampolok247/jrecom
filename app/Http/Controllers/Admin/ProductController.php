@@ -95,7 +95,7 @@ class ProductController extends Controller
             $file = $request->file('primary_image_file');
             $fileName = time() . '_primary_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('products', $fileName, 'public');
-            $primaryImgPath = asset('storage/' . $path);
+            $primaryImgPath = 'storage/' . $path;
         } elseif ($request->filled('primary_image_url')) {
             $primaryImgPath = $request->primary_image_url;
         }
@@ -116,7 +116,7 @@ class ProductController extends Controller
                     $gPath = $gFile->storeAs('products', $gName, 'public');
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'image' => asset('storage/' . $gPath),
+                        'image' => 'storage/' . $gPath,
                         'is_primary' => false,
                         'order' => $idx + 1,
                     ]);
@@ -210,7 +210,7 @@ class ProductController extends Controller
             ProductImage::where('product_id', $product->id)->where('is_primary', true)->delete();
             ProductImage::create([
                 'product_id' => $product->id,
-                'image' => asset('storage/' . $path),
+                'image' => 'storage/' . $path,
                 'is_primary' => true,
                 'order' => 0,
             ]);
@@ -233,7 +233,7 @@ class ProductController extends Controller
                     $gPath = $gFile->storeAs('products', $gName, 'public');
                     ProductImage::create([
                         'product_id' => $product->id,
-                        'image' => asset('storage/' . $gPath),
+                        'image' => 'storage/' . $gPath,
                         'is_primary' => false,
                         'order' => $idx + 1,
                     ]);
