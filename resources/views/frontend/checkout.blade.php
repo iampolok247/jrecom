@@ -67,7 +67,7 @@
                                             <div>
                                                 <div class="d-flex align-items-center gap-2 flex-wrap">
                                                     <label class="form-check-label fw-bold text-dark fs-6 cursor-pointer mb-0" for="pm_{{ $pm->id }}">
-                                                        Paymently.io Instant Gateway (Cards, Banking, MFS)
+                                                        {{ $pm->name ?? 'Pay Online (bKash, Nagad, Rocket, Cards)' }}
                                                     </label>
                                                     <span class="badge bg-primary text-white rounded-pill px-2.5 py-1 small fw-bold" style="font-size: 0.7rem;">Recommended</span>
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small fw-bold" style="font-size: 0.7rem;">

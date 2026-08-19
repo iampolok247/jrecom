@@ -15,10 +15,10 @@ class PaymentMethodSeeder extends Seeder
         PaymentMethod::updateOrCreate(
             ['code' => 'paymently'],
             [
-                'name' => 'Paymently.io Instant Gateway (Cards, Banking, MFS)',
+                'name' => 'Pay Online (bKash, Nagad, Rocket, Cards)',
                 'code' => 'paymently',
                 'logo' => 'https://img.icons8.com/fluency/96/bank-cards.png',
-                'instructions' => 'Pay securely using Paymently.io API supporting Visa, Mastercard, AMEX, bKash, Nagad and NetBanking.',
+                'instructions' => 'Pay securely & instantly using bKash, Nagad, Rocket, Visa, Mastercard, AMEX or Internet Banking.',
                 'is_active' => true,
                 'order' => 1,
             ]
