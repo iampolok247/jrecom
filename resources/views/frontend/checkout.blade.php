@@ -103,38 +103,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            @elseif(in_array($pm->code, ['bkash', 'nagad', 'rocket']))
-                                <!-- Direct Mobile Banking Option -->
-                                <div class="border rounded-4 p-4 cursor-pointer position-relative transition-all"
-                                     :class="selectedGateway === '{{ $pm->code }}' ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 'bg-white hover-shadow-sm'"
-                                     style="border-width: 2px !important; transition: all 0.3s ease;"
-                                     @click="selectedGateway = '{{ $pm->code }}'">
-                                    <div class="form-check d-flex align-items-start justify-content-between m-0">
-                                        <div class="d-flex align-items-start w-100">
-                                            <input class="form-check-input mt-1 me-3 fs-5" type="radio" name="payment_method_code" value="{{ $pm->code }}" id="pm_{{ $pm->id }}" x-model="selectedGateway">
-                                            <div class="w-100">
-                                                <label class="form-check-label fw-bold text-dark fs-6 cursor-pointer d-block mb-1" for="pm_{{ $pm->id }}">
-                                                    {{ $pm->name }}
-                                                </label>
-                                                <p class="small text-muted mb-2">{{ $pm->instructions ?? 'Send money and enter your transaction ID.' }}</p>
-                                                @if(!empty($pm->account_number) || !empty($pm->merchant_number))
-                                                    <div class="p-2 bg-white rounded border small mb-2">
-                                                        @if(!empty($pm->merchant_number)) <div><strong>Merchant Number:</strong> {{ $pm->merchant_number }}</div> @endif
-                                                        @if(!empty($pm->account_number)) <div><strong>Personal Account:</strong> {{ $pm->account_number }}</div> @endif
-                                                    </div>
-                                                @endif
-                                                <div x-show="selectedGateway === '{{ $pm->code }}'" class="row g-2 mt-2">
-                                                    <div class="col-md-6">
-                                                        <input type="text" name="sender_account" class="form-control form-control-sm rounded-pill" placeholder="Your {{ strtoupper($pm->code) }} Number">
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <input type="text" name="transaction_id" class="form-control form-control-sm rounded-pill" placeholder="Transaction ID (TrxID)">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             @else
                                 <!-- Cash On Delivery Option -->
                                 <div class="border rounded-4 p-4 cursor-pointer position-relative transition-all"

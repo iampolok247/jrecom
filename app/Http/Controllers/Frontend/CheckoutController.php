@@ -30,11 +30,12 @@ class CheckoutController extends Controller
             return redirect()->route('shop.index')->with('error', 'Your shopping cart is empty.');
         }
 
-        $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('order', 'asc')->get();
+        PaymentMethod::whereIn('code', ['bkash', 'nagad', 'rocket'])->delete();
+        $paymentMethods = PaymentMethod::where('is_active', true)->whereIn('code', ['paymently', 'cod'])->orderBy('order', 'asc')->get();
         if ($paymentMethods->isEmpty()) {
             try {
                 \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PaymentMethodSeeder', '--force' => true]);
-                $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('order', 'asc')->get();
+                $paymentMethods = PaymentMethod::where('is_active', true)->whereIn('code', ['paymently', 'cod'])->orderBy('order', 'asc')->get();
             } catch (\Throwable $e) {
                 // Ignore if seeder fails
             }
