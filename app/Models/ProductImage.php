@@ -24,22 +24,19 @@ class ProductImage extends Model
             return 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80';
         }
 
-        if (Str::startsWith($value, ['http://', 'https://'])) {
-            if (Str::contains($value, '/storage/')) {
-                $relativePath = 'storage/' . Str::after($value, '/storage/');
-                return asset($relativePath);
-            }
+        if (Str::startsWith($value, ['http://', 'https://']) && !Str::contains($value, '/storage/')) {
             return $value;
         }
 
-        if (Str::startsWith($value, 'storage/')) {
-            return asset($value);
+        $relativePath = $value;
+        if (Str::contains($relativePath, '/storage/')) {
+            $relativePath = Str::after($relativePath, '/storage/');
+        } elseif (Str::startsWith($relativePath, 'storage/')) {
+            $relativePath = Str::after($relativePath, 'storage/');
         }
 
-        if (Str::startsWith($value, 'products/')) {
-            return asset('storage/' . $value);
-        }
+        $relativePath = ltrim($relativePath, '/');
 
-        return asset($value);
+        return url('uploads/' . $relativePath);
     }
 }

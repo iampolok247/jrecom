@@ -28,12 +28,40 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/newsletter/subscribe', [HomeController::class, 'subscribe'])->name('newsletter.subscribe');
 
-// Storage Asset Fail-safe Route (Serves uploaded product images on shared hosting/cPanel if symlink is missing)
+// Media & Storage Asset Delivery Routes (Serves uploaded product images reliably on all hosting environments)
+Route::get('/uploads/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+
+    if (!file_exists($filePath)) {
+        $clean = ltrim(str_replace(['storage/', 'uploads/'], '', $path), '/');
+        $altPath = storage_path('app/public/' . $clean);
+        if (file_exists($altPath)) {
+            $filePath = $altPath;
+        }
+    }
+
+    if (!file_exists($filePath)) {
+        return redirect('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80');
+    }
+
+    return response()->file($filePath);
+})->where('path', '.*')->name('uploads.file');
+
 Route::get('/storage/{path}', function ($path) {
     $filePath = storage_path('app/public/' . $path);
+
     if (!file_exists($filePath)) {
-        abort(404);
+        $clean = ltrim(str_replace(['storage/', 'uploads/'], '', $path), '/');
+        $altPath = storage_path('app/public/' . $clean);
+        if (file_exists($altPath)) {
+            $filePath = $altPath;
+        }
     }
+
+    if (!file_exists($filePath)) {
+        return redirect('https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80');
+    }
+
     return response()->file($filePath);
 })->where('path', '.*')->name('storage.file');
 
