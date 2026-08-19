@@ -177,6 +177,10 @@
             <div class="col-md-12">
                 <div class="d-flex flex-wrap gap-4 p-3 bg-light rounded-4">
                     <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is_active" checked>
+                        <label class="form-check-label fw-bold text-success" for="is_active">Publish / Active Status</label>
+                    </div>
+                    <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="is_featured" value="1" id="is_featured" checked>
                         <label class="form-check-label fw-semibold" for="is_featured">Featured Product</label>
                     </div>

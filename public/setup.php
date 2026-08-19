@@ -92,9 +92,21 @@ function processDeployment($baseDir, $currentDir) {
             $artisanLog[] = "Admin account sami@ravelis.online explicitly created/updated.";
             
             \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'UserSeeder', '--force' => true]);
-            $artisanLog[] = "Admin user credentials seeded successfully.";
+            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'HomepageSeeder', '--force' => true]);
+            $artisanLog[] = "Admin user credentials & homepage sections seeded successfully.";
         } catch (\Throwable $me) {
             $artisanLog[] = "Migration status: " . $me->getMessage();
+        }
+
+        try {
+            $storageLinkPath = $currentDir . '/storage';
+            if (!file_exists($storageLinkPath)) {
+                @symlink($baseDir . '/storage/app/public', $storageLinkPath);
+            }
+            \Illuminate\Support\Facades\Artisan::call('storage:link');
+            $artisanLog[] = "Storage link verified/created successfully.";
+        } catch (\Throwable $sle) {
+            $artisanLog[] = "Storage link status: " . $sle->getMessage();
         }
 
         try {

@@ -32,7 +32,7 @@
     @endif
 
     <!-- Top Categories Grid -->
-    @if(isset($sections['top_categories']) && $sections['top_categories']->is_enabled)
+    @if(!isset($sections['top_categories']) || $sections['top_categories']->is_enabled)
         <section class="mb-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -61,7 +61,7 @@
     @endif
 
     <!-- Flash Sale Countdown Section -->
-    @if(isset($sections['flash_sale']) && $sections['flash_sale']->is_enabled && $flashSaleProducts->count() > 0)
+    @if((!isset($sections['flash_sale']) || $sections['flash_sale']->is_enabled) && $flashSaleProducts->count() > 0)
         <section class="mb-5 p-4 rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);">
             <div class="row align-items-center mb-4">
                 <div class="col-md-6 text-white">
@@ -102,7 +102,7 @@
     @endif
 
     <!-- Featured Products Grid -->
-    @if(isset($sections['featured_products']) && $sections['featured_products']->is_enabled)
+    @if((!isset($sections['featured_products']) || $sections['featured_products']->is_enabled) && $featuredProducts->count() > 0)
         <section class="mb-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -144,8 +144,29 @@
         </section>
     @endif
 
+    <!-- New Arrivals & All Store Products Grid (Guaranteed visibility) -->
+    @if($latestProducts->count() > 0)
+        <section class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold m-0 text-dark">Latest Products Catalog</h3>
+                    <p class="text-muted small m-0">Explore fresh stock arrivals in our store</p>
+                </div>
+                <a href="{{ route('shop.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All Products</a>
+            </div>
+
+            <div class="row g-4">
+                @foreach($latestProducts as $product)
+                    <div class="col-6 col-md-4 col-lg-3">
+                        @include('frontend.partials.product-card', ['product' => $product])
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <!-- Trending Products -->
-    @if(isset($sections['trending_products']) && $sections['trending_products']->is_enabled)
+    @if((!isset($sections['trending_products']) || $sections['trending_products']->is_enabled) && $trendingProducts->count() > 0)
         <section class="mb-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -163,29 +184,8 @@
         </section>
     @endif
 
-    <!-- New Arrivals Section -->
-    @if(isset($sections['new_arrivals']) && $sections['new_arrivals']->is_enabled)
-        <section class="mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h3 class="fw-bold m-0 text-dark">New Arrivals & Fresh Stocks</h3>
-                    <p class="text-muted small m-0">Check out the latest additions to our store catalog</p>
-                </div>
-                <a href="{{ route('shop.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All Products</a>
-            </div>
-
-            <div class="row g-4">
-                @foreach($newArrivals as $product)
-                    <div class="col-6 col-md-4 col-lg-3">
-                        @include('frontend.partials.product-card', ['product' => $product])
-                    </div>
-                @endforeach
-            </div>
-        </section>
-    @endif
-
     <!-- Popular Brands Showcase -->
-    @if(isset($sections['popular_brands']) && $sections['popular_brands']->is_enabled)
+    @if((!isset($sections['popular_brands']) || $sections['popular_brands']->is_enabled) && $brands->count() > 0)
         <section class="mb-5 py-4 bg-white rounded-4 border px-4">
             <h5 class="fw-bold text-center mb-4 text-dark">Shop Official Brand Stores</h5>
             <div class="row align-items-center justify-content-center g-4 text-center">

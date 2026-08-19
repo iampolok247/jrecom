@@ -28,6 +28,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::post('/newsletter/subscribe', [HomeController::class, 'subscribe'])->name('newsletter.subscribe');
 
+// Storage Asset Fail-safe Route (Serves uploaded product images on shared hosting/cPanel if symlink is missing)
+Route::get('/storage/{path}', function ($path) {
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    return response()->file($filePath);
+})->where('path', '.*')->name('storage.file');
+
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/search/suggestions', [ShopController::class, 'searchSuggestions'])->name('search.suggestions');
 
